@@ -111,23 +111,29 @@ footer {
 </main>
 
 <footer>Authorised security awareness training</footer>
+
 <script>
-document.getElementById('training-form').addEventListener('submit', function (event) {
-  event.preventDefault();
+document.getElementById('training-form')
+  .addEventListener('submit', function (event) {
+    event.preventDefault();
 
-  // Discard the entered values. Nothing is transmitted.
-  this.reset();
+    // Count this submission attempt in the current browser session.
+    const attempts =
+      Number(sessionStorage.getItem('trainingAttempts') || 0) + 1;
 
-  // Hide the form and display the awareness message.
-  document.getElementById('form-section').style.display = 'none';
-  document.getElementById('feedback').style.display = 'block';
+    sessionStorage.setItem('trainingAttempts', String(attempts));
 
-  // Move the screen to the awareness message.
-  document.getElementById('feedback').scrollIntoView({
-    behavior: 'smooth',
-    block: 'start'
-  });
+    // Discard all form values without transmitting them.
+    this.reset();
+
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('feedback').style.display = 'block';
+
+    document.getElementById('feedback').scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
     });
+  });
 </script>
 
 </body></html>
