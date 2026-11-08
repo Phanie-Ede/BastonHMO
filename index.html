@@ -112,28 +112,96 @@ footer {
 
 <footer>Authorised security awareness training</footer>
 
+
 <script>
-document.getElementById('training-form')
-  .addEventListener('submit', function (event) {
-    event.preventDefault();
+  const TRACKER_URL =
+    "https://cyberlab-awareness-tracker.stephanierehbox.workers.dev";
 
-    // Count this submission attempt in the current browser session.
-    const attempts =
-      Number(sessionStorage.getItem('trainingAttempts') || 0) + 1;
+  // Identify the participant using their unique training link.
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get("token");
 
-    sessionStorage.setItem('trainingAttempts', String(attempts));
+  if (urlToken && /^[a-f0-9]{64}$/.test(urlToken)) {
+    sessionStorage.setItem("training_token", urlToken);
 
-    // Discard all form values without transmitting them.
-    this.reset();
+    // Remove the token from the visible address bar.
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname
+    );
+  }
 
-    document.getElementById('form-section').style.display = 'none';
-    document.getElementById('feedback').style.display = 'block';
+  const participantToken =
+    sessionStorage.getItem("training_token");
 
-    document.getElementById('feedback').scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
+  // Send only the participant token and event type.
+  // Never send form contents.
+  async function recordTrainingEvent(eventType) {
+    if (!participantToken) return;
+
+    try {
+      const response = await fetch(
+        TRACKER_URL + "/event",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            token: participantToken,
+            event: eventType
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Tracking failed:", response.status);
+      }
+    } catch (error) {
+      console.error("Tracking unavailable:", error);
+    }
+  }
+
+  // Record page visits.
+  recordTrainingEvent("page_visit");
+
+  // Handle the existing training form.
+  document.getElementById("training-form")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      // Record the Submit click.
+      recordTrainingEvent("submit_attempt");
+
+      // Count attempts in this browser session.
+      const attempts =
+        Number(
+          sessionStorage.getItem("trainingAttempts") || 0
+        ) + 1;
+
+      sessionStorage.setItem(
+        "trainingAttempts",
+        String(attempts)
+      );
+
+      // Discard form contents without transmitting them.
+      this.reset();
+
+      // Show the existing awareness feedback.
+      document.getElementById("form-section")
+        .style.display = "none";
+
+      document.getElementById("feedback")
+        .style.display = "block";
+
+      document.getElementById("feedback")
+        .scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
     });
-  });
 </script>
+
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "3f862328ba234fa1b0a0fa419bc102f9"}'></script><!-- End Cloudflare Web Analytics -->
 </body></html>
